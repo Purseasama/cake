@@ -1,7 +1,19 @@
 import streamlit as st
 import pandas as pd
 import os
+import requests
 
+# LINE Notify Token (Replace with your actual token)
+LINE_NOTIFY_TOKEN = "gF2wiELf5fMoOnRdTMud8dJ0xpMrh3mo7oPevPifUVB"
+
+def send_line_notification(message):
+    """Send order notification to LINE Notify."""
+    url = "https://notify-api.line.me/api/notify"
+    headers = {"Authorization": f"Bearer {LINE_NOTIFY_TOKEN}"}
+    data = {"message": message}
+    requests.post(url, headers=headers, data=data)
+
+# Streamlit App Title
 st.title("🎂 Cake Order Form")
 
 # Customer Details
@@ -26,8 +38,6 @@ else:
 cake_text = st.text_input("Text on Cake", placeholder="Enter text to be written on the cake")
 candle_type = st.radio("Candle Type:", ["Spiral", "Pink","No candle"])
 
-# Other Specifications
-add_glitter = st.radio("Add Glitter? (Extra 20 baht)", ["No (+0 baht)", "Yes (+20 baht)"])
 
 # Delivery details
 delivery_date = st.date_input("Delivery Date")
@@ -51,7 +61,6 @@ if st.button("Place Order"):
             "Cake Color": [cake_color],
             "Cake Text": [cake_text],
             "Candle Type": [candle_type],
-            "Add Glitter": [add_glitter],
             "Delivery Date": [delivery_date],
             "Delivery Time": [delivery_time],
             "Delivery Location": [delivery_location],
@@ -67,20 +76,53 @@ if st.button("Place Order"):
 
             st.success("🎉 Order Confirmed! Your details have been saved.")
 
+            # Generate Order Summary
+            order_summary = f"""
+            **💌K.{customer_name}**
+            - **Phone Number:** {phone_number}
+
+            **🎂Cake Details**
+            - **Cake Base:** {cake_base}
+            - **Cake Filling:** {cake_filling}
+            - **Cake Size:** {cake_size}
+            - **Cake Color:** {cake_color}
+            - **Text on Cake:** {cake_text}
+
+            **🕯️Candle**
+            - **Candle Type:** {candle_type}
+
+            **🚗Delivery Information**
+            - **Delivery Date:** {delivery_date}
+            - **Delivery Time:** {delivery_time}
+            - **Delivery Location:** {delivery_location}
+            """
+
+            # Generate Order Summary for LINE
+            order_summaryforLINE = f"""
+💌 K.{customer_name} {phone_number}
+
+🎂Cake Details
+    - Cake Base: {cake_base}
+    - Cake Filling: {cake_filling}
+    - Cake Size: {cake_size}
+    - Cake Color: {cake_color}
+    - Text on Cake: {cake_text}
+
+🕯️Candle
+    - Candle Type: {candle_type}
+
+🚗Delivery Information
+    - Delivery Date: {delivery_date}
+    - Delivery Time: {delivery_time}
+    - Delivery Location: {delivery_location}
+            """
+
+            # Send order notification to LINE
+            send_line_notification(order_summaryforLINE)
+
             # Show Order Summary Immediately
             st.subheader("📋 Order Summary")
-            st.write(f"**Customer Name:** {customer_name}")
-            st.write(f"**Phone Number:** {phone_number}")
-            st.write(f"**Cake Base:** {cake_base}")
-            st.write(f"**Cake Filling:** {cake_filling}")
-            st.write(f"**Cake Size:** {cake_size}")
-            st.write(f"**Cake Color:** {cake_color}")
-            st.write(f"**Text on Cake:** {cake_text}")
-            st.write(f"**Candle Type:** {candle_type}")
-            st.write(f"**Add Glitter:** {add_glitter}")
-            st.write(f"**Delivery Date:** {delivery_date}")
-            st.write(f"**Delivery Time:** {delivery_time}")
-            st.write(f"**Delivery Location:** {delivery_location}")
+            st.write(order_summary.replace("🎂", ""))  # Remove emoji for Streamlit display
 
         except Exception as e:
             st.error(f"⚠️ Error saving order: {e}")
@@ -91,7 +133,7 @@ st.subheader("🔒 Admin Access")
 
 admin_password = st.text_input("Enter Admin Password", type="password")
 
-if admin_password == "PurseAdmin":  # Change this password!
+if admin_password == "mysecret123":  # Change this password!
     if st.button("View Orders"):
         try:
             orders_df = pd.read_csv(ORDER_FILE)
@@ -100,6 +142,7 @@ if admin_password == "PurseAdmin":  # Change this password!
             st.error("No orders found yet.")
 else:
     st.warning("🔐 Enter the admin password to view orders.")
+
 
 
 
